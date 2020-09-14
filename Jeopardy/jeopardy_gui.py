@@ -62,7 +62,7 @@ class JeopardyGameGUI():
                   elif self._gameRound == "double_jeopardy":
                      q_a = self._game.getQuestionsByCategory(self._game.getDoubleJeopardyRound()[column])[row-1]
                   self._question = formatCategoryText(q_a[0], 30)
-                  self._answer = q_a[1]
+                  self._answer = formatCategoryText(q_a[1], 50)
                   if any([dd[0]==self._gameRound and dd[1]==column and dd[2]==(row-1) \
                                          for dd in self._dailyDoubles]):
                       self._question = "Daily Double\n\n\n" + self._question

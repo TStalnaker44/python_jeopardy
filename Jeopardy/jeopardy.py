@@ -61,7 +61,8 @@ class JeopardyQuestions():
         self._jeopardyRound = {}
         self._finalJeopardy = []
 
-        with open("JEOPARDY_CSV.csv", encoding='utf-8') as file:
+        #with open("JEOPARDY_CSV.csv", encoding='utf-8') as file:
+        with open("JEOPARDY_CSV.csv", encoding='cp1252') as file:
             reader = csv.reader(file, delimiter=",")
             for row in reader:
                 gameRound = row[2]
