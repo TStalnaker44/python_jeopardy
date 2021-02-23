@@ -14,7 +14,11 @@ class GameRound(Enum):
 
 class JeopardyGameGUI():
 
-    def __init__(self, fileName, answerTime):
+    def __init__(self, fileName, answerTime, dims):
+
+        self._dims   = dims
+        self._width  = dims[0]
+        self._height = dims[1]
 
         self.loadBackground()
         
@@ -52,14 +56,14 @@ class JeopardyGameGUI():
 
     def timeOut(self):
         self._questionCard = None
-        self._answerCard = QuestionCard(self._answer)
+        self._answerCard = QuestionCard(self._answer, self._dims)
         self._answerCard.center(cen_point=(1/2,1/2))
 
     def initializeTimer(self, answerTime):
         self._timer = Timer(answerTime)
-        q = QuestionCard("")
+        q = QuestionCard("", self._dims)
         length = (4*q.getWidth())//5
-        pos = (1300 // 2 - length // 2, q.getPosition()[1] + q.getHeight() - 75)
+        pos = (self._width // 2 - length // 2, q.getPosition()[1] + q.getHeight() - 75)
         self._timerDisplay = ProgressBar(pos, length,
                                          self._timer._initialTime,
                                          self._timer._timer,
@@ -70,8 +74,10 @@ class JeopardyGameGUI():
         # Create the jeopardy board
         jeopardy_commands = USER_INTERFACE.getControlsForMenu(self._gameRound.value)
         cats = []
+        tileWidth = self._width // 6.5
+        start_x = self._width // 2 - (tileWidth*3)
         for i, x in enumerate(range(6)):
-            cats.append(Menu((50 + (200*i),150),(200, 500), jeopardy_commands, padding=(2,2), spacing=2,
+            cats.append(Menu((start_x + (tileWidth*i),150),(tileWidth, 500), jeopardy_commands, padding=(2,2), spacing=2,
                          color=(0,0,0), borderWidth=0, orientation="vertical"))
 
         # Create the category headers
@@ -86,7 +92,7 @@ class JeopardyGameGUI():
             temp = copy.copy(cat_template)
             temp["text"] = formatCategoryText(category, 12)
             category_commands.append(temp)
-        categoryMenu = Menu((50,50),(1200, 100), category_commands, padding=(2,2), spacing=4,
+        categoryMenu = Menu((start_x,50),(tileWidth*6, 100), category_commands, padding=(2,2), spacing=4,
                          color=(0,0,0), borderWidth=0, orientation="horizontal")
 
         return (cats, categoryMenu)
@@ -137,12 +143,12 @@ class JeopardyGameGUI():
             self._questionCounter += 1
         elif self._questionCard != None:
             self._questionCard = None
-            self._answerCard = QuestionCard(self._answer)
+            self._answerCard = QuestionCard(self._answer, self._dims)
             self._answerCard.center(cen_point=(1/2,1/2))
         elif self._finalCatCard != None:
             self._question = formatCategoryText(self._game.getFinalJeopardyQuestion(), 30)
             self._answer = self._game.getFinalJeopardyAnswer()
-            self._questionCard = QuestionCard(self._question)
+            self._questionCard = QuestionCard(self._question, self._dims)
             self._questionCard.center(cen_point=(1/2,1/2))
             self._finalCatCard = None
 
@@ -158,9 +164,9 @@ class JeopardyGameGUI():
                   self._question = formatCategoryText(q_a[0], 30)
                   self._answer = formatCategoryText(q_a[1], 50)
                   if self.checkForDailyDouble(row, column):
-                      self._dailyDouble = QuestionCard("Daily Double")
+                      self._dailyDouble = QuestionCard("Daily Double", self._dims)
                       self._dailyDouble.center(cen_point=(1/2,1/2))
-                  self._questionCard = QuestionCard(self._question)
+                  self._questionCard = QuestionCard(self._question, self._dims)
                   self._questionCard.center(cen_point=(1/2,1/2))
                   
                   # Remove the tile from the screen
@@ -183,7 +189,8 @@ class JeopardyGameGUI():
                
             elif self._gameRound == GameRound.DoubleJeopardy:
                self._gameRound = GameRound.FinalJeopardy
-               self._finalCatCard = QuestionCard("Final Jeopardy\n\n" + self._game.getFinalJeopardyCatagory())
+               self._finalCatCard = QuestionCard("Final Jeopardy\n\n" + self._game.getFinalJeopardyCatagory(),
+                                                 self._dims)
                self._finalCatCard.center(cen_point=(1/2,1/2))
                self._questionCounter = 0
 
