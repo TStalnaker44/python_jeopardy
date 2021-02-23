@@ -47,7 +47,7 @@ class JeopardyGameGUI():
     def update(self, ticks):
         self.updateRounds()
         SOUNDS.manageSongs("main")
-        if self._dailyDouble == None:
+        if self._dailyDouble == None and self._questionCard != None:
             self._timer.update(ticks, self.timeOut)
         self._timerDisplay.setProgress(self._timer._timer)
 
@@ -99,15 +99,16 @@ class JeopardyGameGUI():
 
     def setDailyDoubles(self):
         # Round, column, row
-        firstDailyDouble  = (GameRound.JeopardyRound,random.randint(0,6),random.randint(0,5))
-        secondDailyDouble = (GameRound.DoubleJeopardy,random.randint(0,6),random.randint(0,5))
-        temp_x = random.randint(0,6)
-        temp_y = random.randint(0,5)
-        while temp_x == secondDailyDouble[1] and temp_y == secondDailyDouble[2]:
-            temp_x = random.randint(0,6)
-            temp_y = random.randint(0,5)
+        firstDailyDouble  = (GameRound.JeopardyRound,random.randint(0,5),random.randint(0,4))
+        secondDailyDouble = (GameRound.DoubleJeopardy,random.randint(0,5),random.randint(0,4))
+        column = random.randint(0,5)
+        row = random.randint(0,4)
+        while column == secondDailyDouble[1] and row == secondDailyDouble[2]:
+            column = random.randint(0,5)
+            row = random.randint(0,4)
         self._dailyDoubles = [firstDailyDouble,secondDailyDouble,
-                              (GameRound.DoubleJeopardy,temp_x,temp_y)]
+                              (GameRound.DoubleJeopardy,column,row)]
+        print(self._dailyDoubles)
 
     def drawGameElements(self, screen):
         if self._dailyDouble != None:
