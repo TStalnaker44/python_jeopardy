@@ -108,7 +108,6 @@ class JeopardyGameGUI():
             row = random.randint(0,4)
         self._dailyDoubles = [firstDailyDouble,secondDailyDouble,
                               (GameRound.DoubleJeopardy,column,row)]
-        print(self._dailyDoubles)
 
     def drawGameElements(self, screen):
         if self._dailyDouble != None:
