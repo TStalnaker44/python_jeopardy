@@ -14,6 +14,7 @@ from questioncard import QuestionCard
 from jeopardy_gui import JeopardyGameGUI
 
 FILE_NAME = "JEOPARDY_CSV"
+ANSWER_TIME = 30 #seconds
 
 def main():
    """
@@ -37,7 +38,7 @@ def main():
 
    USER_INTERFACE.setResourcePath("menuButtons.csv")
 
-   game = JeopardyGameGUI(FILE_NAME)
+   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME)
 
    RUNNING = True
 

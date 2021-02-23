@@ -14,7 +14,7 @@ class GameRound(Enum):
 
 class JeopardyGameGUI():
 
-    def __init__(self, fileName):
+    def __init__(self, fileName, answerTime):
 
         self.loadBackground()
         
@@ -28,7 +28,6 @@ class JeopardyGameGUI():
         self._finalCatCard = None
         self._dailyDouble = None
 
-        answerTime = 10
         self.initializeTimer(answerTime)
 
         self._questionCounter = 0
