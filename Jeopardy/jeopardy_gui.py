@@ -26,6 +26,7 @@ class JeopardyGameGUI():
         self._questionCard = None
         self._answerCard = None
         self._finalCatCard = None
+        self._dailyDouble = None
 
         answerTime = 10
         self.initializeTimer(answerTime)
@@ -46,7 +47,8 @@ class JeopardyGameGUI():
     def update(self, ticks):
         self.updateRounds()
         SOUNDS.manageSongs("main")
-        self._timer.update(ticks, self.timeOut)
+        if self._dailyDouble == None:
+            self._timer.update(ticks, self.timeOut)
         self._timerDisplay.setProgress(self._timer._timer)
 
     def timeOut(self):
@@ -108,8 +110,10 @@ class JeopardyGameGUI():
                               (GameRound.DoubleJeopardy,temp_x,temp_y)]
 
     def drawGameElements(self, screen):
+        if self._dailyDouble != None:
+            self._dailyDouble.draw(screen)
         # Draw question card
-        if self._questionCard != None:
+        elif self._questionCard != None:
             self._questionCard.draw(screen)
             if self._gameRound != GameRound.FinalJeopardy:
                 self._timerDisplay.draw(screen)
@@ -126,7 +130,9 @@ class JeopardyGameGUI():
             self._categoryMenu.draw(screen)
 
     def handleNextSlide(self):
-        if self._answerCard != None:
+        if self._dailyDouble != None:
+            self._dailyDouble = None
+        elif self._answerCard != None:
             self._answerCard = None
             # Increment the number of questions answered
             self._questionCounter += 1
@@ -152,12 +158,12 @@ class JeopardyGameGUI():
                      q_a = self._game.getQuestionsByCategory(self._game.getDoubleJeopardyRound()[column])[row-1]
                   self._question = formatCategoryText(q_a[0], 30)
                   self._answer = formatCategoryText(q_a[1], 50)
-                  if any([dd[0]==self._gameRound and dd[1]==column and dd[2]==(row-1) \
-                                         for dd in self._dailyDoubles]):
-                      self._question = "Daily Double\n\n\n" + self._question
+                  if self.checkForDailyDouble(row, column):
+                      self._dailyDouble = QuestionCard("Daily Double")
+                      self._dailyDouble.center(cen_point=(1/2,1/2))
                   self._questionCard = QuestionCard(self._question)
                   self._questionCard.center(cen_point=(1/2,1/2))
-
+                  
                   # Remove the tile from the screen
                   c.getButtonByPosition(row-1).setText("")
 
@@ -165,6 +171,10 @@ class JeopardyGameGUI():
                   if self._gameRound != GameRound.FinalJeopardy:
                       self._timer.resetTimer()
 
+    def checkForDailyDouble(self, row, column):
+        return any([dd[0]==self._gameRound and dd[1]==column and dd[2]==(row-1) \
+                                         for dd in self._dailyDoubles])
+            
     def updateRounds(self):
         if self._questionCounter == 30:
             if self._gameRound == GameRound.JeopardyRound:
