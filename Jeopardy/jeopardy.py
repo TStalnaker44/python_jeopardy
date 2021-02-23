@@ -1,13 +1,13 @@
 
 
-import csv, random
+import csv, random, os
 
 class JeopardyGame():
 
-    def __init__(self):
+    def __init__(self, fileName):
 
         # Get the categories for the game
-        self._jq = JeopardyQuestions()
+        self._jq = JeopardyQuestions(fileName)
         categories = self._jq.getGameCategories()
         random.shuffle(categories)
         self._jeopardyRound  = categories[:6]
@@ -56,13 +56,14 @@ class JeopardyGame():
 
 class JeopardyQuestions():
 
-    def __init__(self):
+    def __init__(self, fileName):
 
         self._jeopardyRound = {}
         self._finalJeopardy = []
 
-        #with open("JEOPARDY_CSV.csv", encoding='utf-8') as file:
-        with open("JEOPARDY_CSV.csv", encoding='cp1252') as file:
+        path = os.path.join("questions",fileName + ".csv")
+
+        with open(path, encoding='cp1252') as file:
             reader = csv.reader(file, delimiter=",")
             for row in reader:
                 gameRound = row[2]

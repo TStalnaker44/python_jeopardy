@@ -13,6 +13,7 @@ import jeopardy
 from questioncard import QuestionCard
 from jeopardy_gui import JeopardyGameGUI
 
+FILE_NAME = "JEOPARDY_CSV"
 
 def main():
    """
@@ -36,7 +37,7 @@ def main():
 
    USER_INTERFACE.setResourcePath("menuButtons.csv")
 
-   game = JeopardyGameGUI()
+   game = JeopardyGameGUI(FILE_NAME)
 
    RUNNING = True
 

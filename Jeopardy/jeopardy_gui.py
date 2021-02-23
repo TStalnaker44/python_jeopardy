@@ -1,4 +1,4 @@
-import pygame, copy, random
+import pygame, copy, random, os
 from polybius.graphics import *
 from uiManager import USER_INTERFACE
 import jeopardy
@@ -6,14 +6,15 @@ from questioncard import QuestionCard
 
 class JeopardyGameGUI():
 
-    def __init__(self):
-        
-        self._background = Drawable("jeopardy_background.png", (0,0))
+    def __init__(self, fileName):
+
+        path = os.path.join("resources","images","jeopardy_background.png")
+        self._background = Drawable(path, (0,0))
         self._background.scale(2)
 
         self._gameRound = "jeopardy"
 
-        self._game = jeopardy.JeopardyGame()
+        self._game = jeopardy.JeopardyGame(fileName)
         self._cats, self._categoryMenu = self.prepareBoard()
 
         self._questionCard = None
@@ -71,8 +72,7 @@ class JeopardyGameGUI():
 
                   # Remove the tile from the screen
                   c.getButtonByPosition(row-1).setText("")
-
-                  
+        
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             if self._answerCard != None:
                 self._answerCard = None
@@ -126,8 +126,6 @@ class JeopardyGameGUI():
                          color=(0,0,0), borderWidth=0, orientation="horizontal")
 
         return (cats, categoryMenu)
-
-
 
 def formatCategoryText(category, charPerLine):
    terms = category.split(" ")
