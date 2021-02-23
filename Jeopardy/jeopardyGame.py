@@ -62,8 +62,7 @@ def main():
             
       #Calculate ticks
       ticks = gameClock.get_time() / 1000
-
-      SOUNDS.manageSongs("main")
+      game.update(ticks)
                    
    #Close the pygame window and quit pygame
    pygame.quit()
