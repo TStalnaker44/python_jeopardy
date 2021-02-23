@@ -1,4 +1,5 @@
 import pygame, copy, random, os
+from enum import Enum
 from polybius.graphics import *
 from polybius.utils.timer import Timer
 from uiManager import USER_INTERFACE
@@ -6,13 +7,18 @@ import jeopardy
 from questioncard import QuestionCard
 from polybius.managers import SOUNDS
 
+class GameRound(Enum):
+    JeopardyRound  = "jeopardy"
+    DoubleJeopardy = "double_jeopardy"
+    FinalJeopardy  = "final_jeopardy"
+
 class JeopardyGameGUI():
 
     def __init__(self, fileName):
 
         self.loadBackground()
         
-        self._gameRound = "jeopardy"
+        self._gameRound = GameRound.JeopardyRound
 
         self._game = jeopardy.JeopardyGame(fileName)
         self._cats, self._categoryMenu = self.prepareBoard()
@@ -44,17 +50,24 @@ class JeopardyGameGUI():
         self._timerDisplay.setProgress(self._timer._timer)
 
     def timeOut(self):
-        print("wow")
+        self._questionCard = None
+        self._answerCard = QuestionCard(self._answer)
+        self._answerCard.center(cen_point=(1/2,1/2))
 
     def initializeTimer(self, answerTime):
         self._timer = Timer(answerTime)
-        self._timerDisplay = ProgressBar((0,0), 100,
+        q = QuestionCard("")
+        length = (4*q.getWidth())//5
+        pos = (1300 // 2 - length // 2, q.getPosition()[1] + q.getHeight() - 75)
+        self._timerDisplay = ProgressBar(pos, length,
                                          self._timer._initialTime,
-                                         self._timer._timer)
+                                         self._timer._timer,
+                                         height = 25,
+                                         barColor = (107,175,236))
 
     def prepareBoard(self):
         # Create the jeopardy board
-        jeopardy_commands = USER_INTERFACE.getControlsForMenu(self._gameRound)
+        jeopardy_commands = USER_INTERFACE.getControlsForMenu(self._gameRound.value)
         cats = []
         for i, x in enumerate(range(6)):
             cats.append(Menu((50 + (200*i),150),(200, 500), jeopardy_commands, padding=(2,2), spacing=2,
@@ -64,9 +77,9 @@ class JeopardyGameGUI():
         cat_template = {"color":(6, 12, 233), "font":"futura bold", "fontColor":(255, 255, 255),
                        "borderColor":(0,0,0), "borderWidth":1, "closeOnPress":False, "fontSize":28}
         category_commands = []
-        if self._gameRound == "jeopardy":
+        if self._gameRound == GameRound.JeopardyRound:
             gameRound = self._game.getJeopardyRound()
-        elif self._gameRound == "double_jeopardy":
+        elif self._gameRound == GameRound.DoubleJeopardy:
             gameRound = self._game.getDoubleJeopardyRound()
         for category in gameRound:
             temp = copy.copy(cat_template)
@@ -84,21 +97,22 @@ class JeopardyGameGUI():
 
     def setDailyDoubles(self):
         # Round, column, row
-        firstDailyDouble  = ("jeopardy",random.randint(0,6),random.randint(0,5))
-        secondDailyDouble = ("double_jeopardy",random.randint(0,6),random.randint(0,5))
+        firstDailyDouble  = (GameRound.JeopardyRound,random.randint(0,6),random.randint(0,5))
+        secondDailyDouble = (GameRound.DoubleJeopardy,random.randint(0,6),random.randint(0,5))
         temp_x = random.randint(0,6)
         temp_y = random.randint(0,5)
         while temp_x == secondDailyDouble[1] and temp_y == secondDailyDouble[2]:
             temp_x = random.randint(0,6)
             temp_y = random.randint(0,5)
         self._dailyDoubles = [firstDailyDouble,secondDailyDouble,
-                              ("double_jeopardy",temp_x,temp_y)]
+                              (GameRound.DoubleJeopardy,temp_x,temp_y)]
 
     def drawGameElements(self, screen):
         # Draw question card
         if self._questionCard != None:
             self._questionCard.draw(screen)
-            self._timerDisplay.draw(screen)
+            if self._gameRound != GameRound.FinalJeopardy:
+                self._timerDisplay.draw(screen)
         # Draw answer to question
         elif self._answerCard != None:
             self._answerCard.draw(screen)
@@ -132,9 +146,9 @@ class JeopardyGameGUI():
             for column, c in enumerate(self._cats):
                row = c.handleEvent(event)
                if row != None and c.getButtonByPosition(row-1)._text != "":
-                  if self._gameRound == "jeopardy":
+                  if self._gameRound == GameRound.JeopardyRound:
                      q_a = self._game.getQuestionsByCategory(self._game.getJeopardyRound()[column])[row-1]
-                  elif self._gameRound == "double_jeopardy":
+                  elif self._gameRound == GameRound.DoubleJeopardy:
                      q_a = self._game.getQuestionsByCategory(self._game.getDoubleJeopardyRound()[column])[row-1]
                   self._question = formatCategoryText(q_a[0], 30)
                   self._answer = formatCategoryText(q_a[1], 50)
@@ -148,16 +162,18 @@ class JeopardyGameGUI():
                   c.getButtonByPosition(row-1).setText("")
 
                   #Reset the timer
-                  self._timer.resetTimer()
+                  if self._gameRound != GameRound.FinalJeopardy:
+                      self._timer.resetTimer()
 
     def updateRounds(self):
         if self._questionCounter == 30:
-            if self._gameRound == "jeopardy":
-                self._gameRound = "double_jeopardy"
+            if self._gameRound == GameRound.JeopardyRound:
+                self._gameRound = GameRound.DoubleJeopardy
                 self._cats, self._categoryMenu = self.prepareBoard()
                 self._questionCounter = 0
                
-            elif self._gameRound == "double_jeopardy":
+            elif self._gameRound == GameRound.DoubleJeopardy:
+               self._gameRound = GameRound.FinalJeopardy
                self._finalCatCard = QuestionCard("Final Jeopardy\n\n" + self._game.getFinalJeopardyCatagory())
                self._finalCatCard.center(cen_point=(1/2,1/2))
                self._questionCounter = 0
