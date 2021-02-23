@@ -5,9 +5,10 @@ File: main.py
 The main loop for running Jeopardy Python Edition
 """
 
-import pygame, copy
+import pygame, copy, os
 from polybius.graphics import *
 from uiManager import USER_INTERFACE
+from polybius.managers import SOUNDS
 import jeopardy
 from questioncard import QuestionCard
 from jeopardy_gui import JeopardyGameGUI
@@ -21,6 +22,8 @@ def main():
    pygame.init()
    pygame.font.init()
    pygame.mixer.init()
+
+   initializeManagers()
 
    # Update the title for the window
    pygame.display.set_caption('Jeopardy!')
@@ -58,9 +61,15 @@ def main():
             
       #Calculate ticks
       ticks = gameClock.get_time() / 1000
+
+      SOUNDS.manageSongs("main")
                    
    #Close the pygame window and quit pygame
    pygame.quit()
+
+def initializeManagers():
+   SOUNDS.setResourcePath(os.path.join("resources","data","music.csv"))
+   SOUNDS.setMusicFolderPath(os.path.join("resources","music"))
 
 if __name__ == "__main__":
     main()

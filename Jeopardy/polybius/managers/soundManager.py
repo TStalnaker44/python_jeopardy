@@ -78,8 +78,11 @@ class SoundManager():
       def manageSongs(self, level):
          if not pygame.mixer.music.get_busy():
             temp = self._currentSong
-            while temp == self._currentSong:
-               self._currentSong = random.choice(self.getSongsByLevel(level))
+            if len(self.getSongsByLevel(level)) > 1:
+               while temp == self._currentSong:
+                  self._currentSong = random.choice(self.getSongsByLevel(level))
+            else:
+               self._currentSong = self.getSongsByLevel(level)[0]
             self.playMusic(self._currentSong)
 
       def mute(self):
