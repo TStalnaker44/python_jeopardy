@@ -53,7 +53,8 @@ class JeopardyGameGUI():
         self.updateRounds()
         if not self._mute:
             SOUNDS.manageSongs("main")
-        if self._dailyDouble == None and self._questionCard != None:
+        if self._dailyDouble == None and self._questionCard != None \
+           and self._gameRound != GameRound.FinalJeopardy:
             self._timer.update(ticks, self.timeOut)
         self._timerDisplay.setProgress(self._timer._timer)
 
