@@ -14,11 +14,13 @@ class GameRound(Enum):
 
 class JeopardyGameGUI():
 
-    def __init__(self, fileName, answerTime, dims):
+    def __init__(self, fileName, answerTime, dims, mute=False):
 
         self._dims   = dims
         self._width  = dims[0]
         self._height = dims[1]
+
+        self._mute = mute
 
         self.loadBackground()
         
@@ -49,7 +51,8 @@ class JeopardyGameGUI():
 
     def update(self, ticks):
         self.updateRounds()
-        SOUNDS.manageSongs("main")
+        if not self._mute:
+            SOUNDS.manageSongs("main")
         if self._dailyDouble == None and self._questionCard != None:
             self._timer.update(ticks, self.timeOut)
         self._timerDisplay.setProgress(self._timer._timer)
@@ -68,7 +71,8 @@ class JeopardyGameGUI():
                                          self._timer._initialTime,
                                          self._timer._timer,
                                          height = 25,
-                                         barColor = (107,175,236))
+                                         barColor = (107,175,236),
+                                         alignment="center")
 
     def prepareBoard(self):
         # Create the jeopardy board

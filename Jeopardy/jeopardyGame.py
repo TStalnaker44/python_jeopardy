@@ -33,14 +33,14 @@ def main():
    
    # Get the screen
    #screen = pygame.display.set_mode((1300,800))#, pygame.FULLSCREEN)
-   screen = pygame.display.set_mode(DIMS, pygame.FULLSCREEN)
+   screen = pygame.display.set_mode(DIMS)#, pygame.FULLSCREEN)
 
    # Create an instance of the game clock
    gameClock = pygame.time.Clock()
 
    USER_INTERFACE.setResourcePath("menuButtons.csv")
 
-   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME, DIMS)
+   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME, DIMS, mute=True)
 
    RUNNING = True
 
