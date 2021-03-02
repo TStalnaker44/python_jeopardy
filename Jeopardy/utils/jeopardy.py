@@ -62,8 +62,14 @@ class JeopardyQuestions():
         self._finalJeopardy = []
 
         path = os.path.join("questions",fileName + ".csv")
+        try: self.readFromFile('cp1252', path)
+        except: self.readFromFile('utf-8', path)
+            
+        self._categories = [k for k in self._jeopardyRound.keys() if len(self._jeopardyRound[k]) >= 5]
 
-        with open(path, encoding='cp1252') as file:
+
+    def readFromFile(self, encoding, path):
+        with open(path, encoding=encoding) as file:
             reader = csv.reader(file, delimiter=",")
             for row in reader:
                 gameRound = row[2]
@@ -79,8 +85,6 @@ class JeopardyQuestions():
                             self._jeopardyRound[category].append((question, answer))
                         else:
                             self._jeopardyRound[category] = [(question, answer)]
-
-        self._categories = [k for k in self._jeopardyRound.keys() if len(self._jeopardyRound[k]) >= 5]
 
     def getCategory(self):
         return random.choice(self._categories)

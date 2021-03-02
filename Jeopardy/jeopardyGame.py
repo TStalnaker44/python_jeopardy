@@ -5,23 +5,19 @@ File: main.py
 The main loop for running Jeopardy Python Edition
 """
 
-import pygame, copy, os
+import pygame, copy, os, sys
 from polybius.graphics import *
 from utils.uiManager import USER_INTERFACE
 from polybius.managers import SOUNDS
-import utils.jeopardy
+import utils.jeopardy, re
 from utils.questioncard import QuestionCard
 from utils.jeopardy_gui import JeopardyGameGUI
 
-FILE_NAME = "JEOPARDY_CSV"
-ANSWER_TIME = 30 #seconds
-MUTE = True
-DIMS = (1200,800)
-
-def main():
+def main(fileName="JEOPARDY_CSV_REAL", answerTime=30, dims="(1200,800)"):
    """
    Main loop for the program
    """
+
    # Initialize the module
    pygame.init()
    pygame.font.init()
@@ -31,17 +27,22 @@ def main():
 
    # Update the title for the window
    pygame.display.set_caption('Jeopardy!')
+
+   t = re.search("\((\d+),[ ]*(\d+)\)", dims)
+   dims = (int(t.group(1)), int(t.group(2)))
+   print(dims)
    
    # Get the screen
-   #screen = pygame.display.set_mode((1300,800))#, pygame.FULLSCREEN)
-   screen = pygame.display.set_mode(DIMS)#, pygame.FULLSCREEN)
+   screen = pygame.display.set_mode(dims)#, pygame.FULLSCREEN)
 
    # Create an instance of the game clock
    gameClock = pygame.time.Clock()
 
    USER_INTERFACE.setResourcePath(os.path.join("utils","menuButtons.csv"))
 
-   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME, DIMS, mute=MUTE)
+   
+
+   game = JeopardyGameGUI(fileName, int(answerTime), dims)
 
    RUNNING = True
 
@@ -63,6 +64,8 @@ def main():
             RUNNING = False
          if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             RUNNING = False
+         if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+            game.toggleMute()
 
          game.handleEvent(event)
             
@@ -78,5 +81,5 @@ def initializeManagers():
    SOUNDS.setMusicFolderPath(os.path.join("resources","music"))
 
 if __name__ == "__main__":
-    main()
+   main(*sys.argv[1:])
 
