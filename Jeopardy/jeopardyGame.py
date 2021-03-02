@@ -13,7 +13,8 @@ import utils.jeopardy, re
 from utils.questioncard import QuestionCard
 from utils.jeopardy_gui import JeopardyGameGUI
 
-def main(fileName="JEOPARDY_CSV_REAL", answerTime=30, dims="(1200,800)"):
+def main(fileName="JEOPARDY_CSV_REAL", answerTime=30,
+         fullscreen="True", dims="(1200,800)"):
    """
    Main loop for the program
    """
@@ -30,10 +31,14 @@ def main(fileName="JEOPARDY_CSV_REAL", answerTime=30, dims="(1200,800)"):
 
    t = re.search("\((\d+),[ ]*(\d+)\)", dims)
    dims = (int(t.group(1)), int(t.group(2)))
-   print(dims)
+
+   fullscreen = fullscreen.lower() == "true"
    
    # Get the screen
-   screen = pygame.display.set_mode(dims)#, pygame.FULLSCREEN)
+   if fullscreen:
+      screen = pygame.display.set_mode(dims, pygame.FULLSCREEN)
+   else:
+      screen = pygame.display.set_mode(dims)
 
    # Create an instance of the game clock
    gameClock = pygame.time.Clock()

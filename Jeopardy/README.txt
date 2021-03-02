@@ -22,6 +22,8 @@ Running the Program:
 
 Game Controls:
 
+	- Press the ESCAPE key  or press the X to exit the game
+
 	- Hit the M key to mute and unmute game audio
 
 	- Click on Question Tiles to select them
@@ -69,6 +71,16 @@ Optional Command Line Arguments:
 			- Number must be a positive integer
 
 			- The default is 30 seconds
+
+		- Full Screen
+			
+			- Boolean flag the determines if the game should be
+			     rendered in full screen
+
+			- True = Full Screen Mode; 
+			  False = Windowed Mode		
+
+			- Default: True	
 
 		- Window Dimensions:
 
