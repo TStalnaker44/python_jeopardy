@@ -2,9 +2,9 @@ import pygame, copy, random, os
 from enum import Enum
 from polybius.graphics import *
 from polybius.utils.timer import Timer
-from uiManager import USER_INTERFACE
-import jeopardy
-from questioncard import QuestionCard
+from .uiManager import USER_INTERFACE
+from .jeopardy import JeopardyGame
+from .questioncard import QuestionCard
 from polybius.managers import SOUNDS
 
 class GameRound(Enum):
@@ -26,7 +26,7 @@ class JeopardyGameGUI():
         
         self._gameRound = GameRound.JeopardyRound
 
-        self._game = jeopardy.JeopardyGame(fileName)
+        self._game = JeopardyGame(fileName)
         self._cats, self._categoryMenu = self.prepareBoard()
 
         self._questionCard = None

@@ -7,14 +7,15 @@ The main loop for running Jeopardy Python Edition
 
 import pygame, copy, os
 from polybius.graphics import *
-from uiManager import USER_INTERFACE
+from utils.uiManager import USER_INTERFACE
 from polybius.managers import SOUNDS
-import jeopardy
-from questioncard import QuestionCard
-from jeopardy_gui import JeopardyGameGUI
+import utils.jeopardy
+from utils.questioncard import QuestionCard
+from utils.jeopardy_gui import JeopardyGameGUI
 
 FILE_NAME = "JEOPARDY_CSV"
 ANSWER_TIME = 30 #seconds
+MUTE = True
 DIMS = (1200,800)
 
 def main():
@@ -38,9 +39,9 @@ def main():
    # Create an instance of the game clock
    gameClock = pygame.time.Clock()
 
-   USER_INTERFACE.setResourcePath("menuButtons.csv")
+   USER_INTERFACE.setResourcePath(os.path.join("utils","menuButtons.csv"))
 
-   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME, DIMS, mute=True)
+   game = JeopardyGameGUI(FILE_NAME, ANSWER_TIME, DIMS, mute=MUTE)
 
    RUNNING = True
 
