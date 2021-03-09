@@ -22,7 +22,7 @@ Running the Program:
 
 Game Controls:
 
-	- Press the ESCAPE key  or press the X to exit the game
+	- Press the ESCAPE key or press the X to exit the game
 
 	- Hit the M key to mute and unmute game audio
 
@@ -46,9 +46,14 @@ Game Controls:
 
 Optional Command Line Arguments:
 
-	- The user can provide three different arguments, described below:
+	- The user can provide four different arguments as described here:
 
-		py jeopardyGame.py <question file> <answer time> <window dimensions>
+		py jeopardyGame.py --questions <question file> --timer <answer time> 
+				   --dims <window dimensions> --fullscreen
+
+	- All arguments are optional, meaning you can pick and choose which to include
+
+	- Typing 'py jeopardyGame.py --help' will bring up documentation in the terminal
 
 	- The Arguments:
 
