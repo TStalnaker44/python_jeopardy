@@ -55,6 +55,8 @@ Optional Command Line Arguments:
 
 	- Typing 'py jeopardyGame.py --help' will bring up documentation in the terminal
 
+	- Typing 'py jeopardyGame.py' --controls will bring up documentation on game controls
+
 	- The Arguments:
 
 		- Question File:
