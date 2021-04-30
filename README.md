@@ -41,7 +41,7 @@ All of the arguments are optional, meaning you can choose which to include.
 * Typing 'py jeopardyGame.py --help' will bring up documentation in the terminal
 * Typing 'py jeopardyGame.py --controls' will bring up documentation on game controls
 
-###The Arguments
+### The Arguments
 * Question File:
     * This is the name of the CSV file that contains all of the questions and answers for the Jeopardy game
     * Do NOT include the .csv extension with the file name
