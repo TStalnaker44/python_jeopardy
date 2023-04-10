@@ -1,0 +1,11 @@
+menu,text,color,font,fontSize,fontColor,borderColor,borderWidth,closeOnPress,toggleText
+jeopardy,$200 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+jeopardy,$400 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+jeopardy,$600 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+jeopardy,$800 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+jeopardy,"$1,000 ","(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+double_jeopardy,$400 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+double_jeopardy,$800 ,"(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+double_jeopardy,"$1,200 ","(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+double_jeopardy,"$1,600 ","(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
+double_jeopardy,"$2,000 ","(6, 12, 233)",futura bold,64,"(255, 204, 0)","(0, 0, 0)",1,FALSE,null
