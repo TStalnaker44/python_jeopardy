@@ -30,6 +30,26 @@ class JeopardyGame():
             self._jeopardyQuestions[c] = list(qa_list) if self._jq.fixed_layout else random.sample(qa_list, 5)
 
 
+    def snapshot(self):
+        return {"first": self._jeopardyRound, "second": self._doubleJeopardy,
+                "final": self._finalJeopardy, "questions": self._jeopardyQuestions,
+                "values": {c: [self.getQuestionValue(c, i) for i in range(5)]
+                           for c in self._jeopardyQuestions}}
+
+    @classmethod
+    def from_snapshot(cls, state):
+        from types import SimpleNamespace
+        game = cls.__new__(cls)
+        game._jeopardyRound = state["first"]
+        game._doubleJeopardy = state["second"]
+        game._finalJeopardy = state["final"]
+        game._jeopardyQuestions = {c: [tuple(q) for q in questions] for c, questions in state["questions"].items()}
+        values = state["values"]
+        fixed = all(v is not None for row in values.values() for v in row)
+        game._jq = SimpleNamespace(fixed_layout=fixed, question_values={
+            c: dict(zip(game._jeopardyQuestions[c], row)) for c, row in values.items()})
+        return game
+
     def getJeopardyRound(self):
         return self._jeopardyRound
 

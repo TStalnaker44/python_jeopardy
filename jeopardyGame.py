@@ -13,6 +13,7 @@ import utils.jeopardy, re
 from utils.questioncard import QuestionCard
 from utils.jeopardy_gui import JeopardyGameGUI
 from utils.settings import SettingsMenu
+from utils.localplayers import LocalPlayers
 from pygame._sdl2.video import Window
 
 
@@ -84,7 +85,7 @@ def main(fileName, answerTime, fullscreen, dims):
    if fileName.endswith(".csv"):
       fileName = fileName[:-4]
       
-   game = JeopardyGameGUI(fileName, int(answerTime), dims)
+   game = JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims))
 
    RUNNING = True
 
@@ -118,8 +119,10 @@ def main(fileName, answerTime, fullscreen, dims):
             except pygame.error:
                screen = setDisplay(dims, settings.fullscreen)
                settings.message = "Display mode unavailable. Try again."
+            if game.multiplayer.setup_open or game.wager is not None:
+               pygame.key.start_text_input()
             continue
-         if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+         if event.type == pygame.KEYDOWN and event.key == pygame.K_m and not game.multiplayer.setup_open:
             SOUNDS.toggleMute()
             continue
          if was_open or settings.open or (event.type == pygame.KEYDOWN and event.key == pygame.K_F1):
@@ -128,6 +131,8 @@ def main(fileName, answerTime, fullscreen, dims):
             RUNNING = False
             continue
          game.handleEvent(event)
+         if game.new_game_requested:
+            game = JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims))
 
       # Keep the current clue paused while the settings panel is open.
       if not settings.open:
