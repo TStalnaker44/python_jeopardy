@@ -77,22 +77,27 @@ class JeopardyGameGUI():
 
     def prepareBoard(self):
         # Create the jeopardy board
-        jeopardy_commands = USER_INTERFACE.getControlsForMenu(self._gameRound.value)
+        jeopardy_commands = USER_INTERFACE.getControlsForMenu("jeopardy" if self._gameRound == GameRound.JeopardyRound else "double_jeopardy")
+        if self._gameRound == GameRound.JeopardyRound:
+            gameRound = self._game.getJeopardyRound()
+        else:
+            gameRound = self._game.getDoubleJeopardyRound()
         cats = []
         tileWidth = self._width // 6.5
         start_x = self._width // 2 - (tileWidth*3)
         for i, x in enumerate(range(6)):
-            cats.append(Menu((start_x + (tileWidth*i),150),(tileWidth, 500), jeopardy_commands, padding=(2,2), spacing=2,
+            controls = copy.deepcopy(jeopardy_commands)
+            for row, control in enumerate(controls):
+                value = self._game.getQuestionValue(gameRound[i], row)
+                if value is not None:
+                    control["text"] = f"${value:,}"
+            cats.append(Menu((start_x + (tileWidth*i),150),(tileWidth, 500), controls, padding=(2,2), spacing=2,
                          color=(0,0,0), borderWidth=0, orientation="vertical"))
 
         # Create the category headers
         cat_template = {"color":(6, 12, 233), "font":"futura bold", "fontColor":(255, 255, 255),
                        "borderColor":(0,0,0), "borderWidth":1, "closeOnPress":False, "fontSize":28}
         category_commands = []
-        if self._gameRound == GameRound.JeopardyRound:
-            gameRound = self._game.getJeopardyRound()
-        elif self._gameRound == GameRound.DoubleJeopardy:
-            gameRound = self._game.getDoubleJeopardyRound()
         for category in gameRound:
             temp = copy.copy(cat_template)
             temp["text"] = formatCategoryText(category, 12)
