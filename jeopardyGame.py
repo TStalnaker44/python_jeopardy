@@ -12,6 +12,48 @@ from polybius.managers import SOUNDS
 import utils.jeopardy, re
 from utils.questioncard import QuestionCard
 from utils.jeopardy_gui import JeopardyGameGUI
+from utils.settings import SettingsMenu
+from pygame._sdl2.video import Window
+
+
+def setDisplay(dims, fullscreen):
+   # Recreate the SDL renderer when switching a scaled display's mode.
+   pygame.display.quit()
+   pygame.display.init()
+   pygame.display.set_icon(pygame.image.load(os.path.join("resources", "images", "jeopardy_window_icon.png")))
+   # Scale the board inside a normal window with native window controls.
+   flags = pygame.SCALED | pygame.RESIZABLE
+   screen = pygame.display.set_mode(dims, flags)
+   if fullscreen:
+      window = Window.from_display_module()
+      window.maximize()
+   pygame.display.set_caption('Jeopardy!')
+   setWindowDarkMode()
+   return screen
+
+def setWindowDarkMode():
+   """Use a dark native title bar without changing the Windows theme."""
+   if os.name != "nt":
+      return
+   handle = pygame.display.get_wm_info().get("window")
+   if not handle:
+      return
+   import ctypes
+   from ctypes import wintypes
+   try:
+      set_attribute = ctypes.WinDLL("dwmapi").DwmSetWindowAttribute
+      set_attribute.argtypes = [wintypes.HWND, wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD]
+      set_attribute.restype = ctypes.c_long
+      dark = ctypes.c_int(1)
+      if set_attribute(handle, 20, ctypes.byref(dark), ctypes.sizeof(dark)) != 0:
+         set_attribute(handle, 19, ctypes.byref(dark), ctypes.sizeof(dark))
+      # Windows 11 also supports explicit caption and title-text colors.
+      for attribute, color in ((35, 0x202020), (36, 0xFFFFFF)):
+         value = wintypes.DWORD(color)
+         set_attribute(handle, attribute, ctypes.byref(value), ctypes.sizeof(value))
+   except (OSError, AttributeError):
+      pass
+
 
 def main(fileName, answerTime, fullscreen, dims):
    """
@@ -28,16 +70,11 @@ def main(fileName, answerTime, fullscreen, dims):
    # Update the title for the window
    pygame.display.set_caption('Jeopardy!')
 
-   t = re.search("\((\d+),[ ]*(\d+)\)", dims)
+   t = re.search(r"\((\d+),[ ]*(\d+)\)", dims)
    dims = (int(t.group(1)), int(t.group(2)))
 
-   #fullscreen = fullscreen.lower() == "true"
-   
-   # Get the screen
-   if fullscreen:
-      screen = pygame.display.set_mode(dims, pygame.FULLSCREEN)
-   else:
-      screen = pygame.display.set_mode(dims)
+   settings = SettingsMenu(dims, fullscreen)
+   screen = setDisplay(dims, settings.fullscreen)
 
    # Create an instance of the game clock
    gameClock = pygame.time.Clock()
@@ -54,31 +91,50 @@ def main(fileName, answerTime, fullscreen, dims):
    while RUNNING:
 
       #Increment the clock
-      gameClock.tick()
+      ticks = gameClock.tick(60) / 1000
 
       screen.fill((255,255,255))
 
       game.draw(screen)
+      settings.draw(screen)
       
       pygame.display.flip()
 
       # event handling, gets all event from the eventqueue
       for event in pygame.event.get():
-         # only do something if the event is of type QUIT or K_ESCAPE
-         if (event.type == pygame.QUIT):
+         if event.type == pygame.QUIT:
             RUNNING = False
+            continue
+         was_open = settings.open
+         action = settings.handle_event(event)
+         if event.type == pygame.KEYDOWN and event.key == pygame.K_F11:
+            action = "toggle_fullscreen"
+         if action == "toggle_fullscreen":
+            try:
+               screen = setDisplay(dims, not settings.fullscreen)
+               settings.fullscreen = not settings.fullscreen
+               settings.message = ""
+               settings.save()
+            except pygame.error:
+               screen = setDisplay(dims, settings.fullscreen)
+               settings.message = "Display mode unavailable. Try again."
+            continue
+         if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
+            SOUNDS.toggleMute()
+            continue
+         if was_open or settings.open or (event.type == pygame.KEYDOWN and event.key == pygame.K_F1):
+            continue
          if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             RUNNING = False
-         if event.type == pygame.KEYDOWN and event.key == pygame.K_m:
-            game.toggleMute()
-
+            continue
          game.handleEvent(event)
-            
-      #Calculate ticks
-      ticks = gameClock.get_time() / 1000
-      game.update(ticks)
-                   
+
+      # Keep the current clue paused while the settings panel is open.
+      if not settings.open:
+         game.update(ticks)
+
    #Close the pygame window and quit pygame
+   settings.save()
    pygame.quit()
 
 def initializeManagers():
@@ -86,33 +142,14 @@ def initializeManagers():
    SOUNDS.setMusicFolderPath(os.path.join("resources","music"))
 
 CONTROLS = """
-Controls:
-
-- Press the ESCAPE key or press the X to exit the game
-
-- Hit the M key to mute and unmute game audio
-
-- Click on Question Tiles to select them
-
-   - The timer will begin automatically
-
-- Click the Space Bar when the question has been answered to advance
-   to the solution screen. 
-
-   - The game will advance automatically when the timer runs out
-
-- Click the Space Bar once more to advance from the Answer Screen
-   back to the Game Board
-
-- The game will automatically advance between rounds
-
-- There is no functionality to keep track of scores
+Escape exits. M toggles mute. F1 opens settings. F11 toggles maximized window.
+Click a clue to reveal it; Space reveals the answer and advances to the board.
 """
 
 if __name__ == "__main__":
    descStr = "A program that runs a Jeopardy Game with Jeopardy, Double Jeopardy, and Final Jeopardy Rounds"
    parser = argparse.ArgumentParser(description=descStr)
-   parser.add_argument("-c, --controls", dest="controls", action="store_true", default=False,
+   parser.add_argument("-c", "--controls", dest="controls", action="store_true", default=False,
      help="show game controls and exit")
    parser.add_argument("--questions", dest="qfile",
      default="JEOPARDY_CSV_REAL", type=str, required=False,
@@ -120,14 +157,14 @@ if __name__ == "__main__":
    parser.add_argument("--timer", dest="timer",
      default=30, type=int, required=False,
      help="the amount of time in seconds that players will have to answer questions")
-   parser.add_argument("--fullscreen", dest="fullscreen", action="store_true", default=False,
-     help="set the game to be rendered in full screen")
+   parser.add_argument("--fullscreen", dest="fullscreen", action="store_true", default=None,
+     help="start in a maximized window")
    parser.add_argument("--dims", dest="dims", type=str,
      default="(1200,800)", required=False,
      help="the width and height of the desired screen in pixels : Entered as (<width>, <height>)") 
    args = parser.parse_args()
    if not args.controls:
-      main(args.qfile, args.timer, args.fullscreen, args.dims)
+      main(args.qfile, args.timer, args.fullscreen, args.dims )
    else:
       print(CONTROLS)
 

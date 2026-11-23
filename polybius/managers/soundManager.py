@@ -40,7 +40,7 @@ class SoundManager():
          self._sounds = {}
          
          self._currentSong = None
-         self._currentVolume = 100
+         self._currentVolume = 1.0
          self._musicStatus = "stop" # or "play" or "pause"
          self._mute = False
 
@@ -84,6 +84,10 @@ class SoundManager():
             else:
                self._currentSong = self.getSongsByLevel(level)[0]
             self.playMusic(self._currentSong)
+
+      def setVolume(self, volume):
+         self._currentVolume = max(0.0, min(1.0, float(volume)))
+         pygame.mixer.music.set_volume(0 if self._mute else self._currentVolume)
 
       def mute(self):
          self._mute = True
