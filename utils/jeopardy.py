@@ -1,6 +1,7 @@
 
 
-import csv, random, os
+import csv, random, os, json
+from pathlib import Path
 
 class JeopardyGame():
 
@@ -9,7 +10,8 @@ class JeopardyGame():
         # Get the categories for the game
         self._jq = JeopardyQuestions(fileName)
         categories = self._jq.getGameCategories()
-        random.shuffle(categories)
+        if not self._jq.fixed_layout:
+            random.shuffle(categories)
         self._jeopardyRound  = categories[:6]
         self._doubleJeopardy = categories[6:]
         self._finalJeopardy = self._jq.getFinalJeopardy()
@@ -19,21 +21,13 @@ class JeopardyGame():
         self._jeopardyQuestions = {}
         for c in self._jeopardyRound: 
             qa_list = catDict[c]
-            self._jeopardyQuestions[c] = []
-            while len(self._jeopardyQuestions[c]) < 5:
-                temp = random.choice(qa_list)
-                if not temp in self._jeopardyQuestions[c]:
-                    self._jeopardyQuestions[c].append(temp)
+            self._jeopardyQuestions[c] = list(qa_list) if self._jq.fixed_layout else random.sample(qa_list, 5)
 
         # Get the questions for the double jeopardy round
         catDict = self._jq.jeopardyCategories()
         for c in self._doubleJeopardy: 
             qa_list = catDict[c]
-            self._jeopardyQuestions[c] = []
-            while len(self._jeopardyQuestions[c]) < 5:
-                temp = random.choice(qa_list)
-                if not temp in self._jeopardyQuestions[c]:
-                    self._jeopardyQuestions[c].append(temp)
+            self._jeopardyQuestions[c] = list(qa_list) if self._jq.fixed_layout else random.sample(qa_list, 5)
 
 
     def getJeopardyRound(self):
@@ -44,6 +38,11 @@ class JeopardyGame():
 
     def getQuestionsByCategory(self, c):
         return self._jeopardyQuestions[c]
+
+    def getQuestionValue(self, category, row):
+        if self._jq.fixed_layout:
+            return self._jq.question_values[category][self._jeopardyQuestions[category][row]]
+        return None
 
     def getFinalJeopardyCatagory(self):
         return self._finalJeopardy[0]
@@ -60,22 +59,57 @@ class JeopardyQuestions():
 
         self._jeopardyRound = {}
         self._finalJeopardy = []
+        self.question_values = {}
 
         path = os.path.join("questions",fileName + ".csv")
-        try: self.readFromFile('cp1252', path)
-        except: self.readFromFile('utf-8', path)
+        try:
+            layout = json.loads(Path(path).with_suffix(".layout.json").read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            layout = {}
+        if not isinstance(layout, dict):
+            raise ValueError("Game layout metadata must be a JSON object.")
+        self.fixed_layout = layout.get("preserve_layout") is True
+        self.title = layout.get("title") if isinstance(layout.get("title"), str) else None
+        try:
+            self.readFromFile('utf-8-sig', path)
+        except UnicodeDecodeError:
+            self._jeopardyRound.clear()
+            self._finalJeopardy.clear()
+            self.question_values.clear()
+            self.readFromFile('cp1252', path)
+
+        self._jeopardyRound = {category: list(dict.fromkeys(questions))
+                              for category, questions in self._jeopardyRound.items()}
             
         self._categories = [k for k in self._jeopardyRound.keys() if len(self._jeopardyRound[k]) >= 5]
+        if len(self._categories) < 12:
+            raise ValueError("A game needs at least 12 categories with 5 different clues each.")
+        if not self._finalJeopardy:
+            raise ValueError("Add at least one Final Jeopardy! question to this CSV.")
+        if self.fixed_layout:
+            if len(self._jeopardyRound) != 12 or any(len(questions) != 5 for questions in self._jeopardyRound.values()):
+                raise ValueError("A fixed-layout game needs exactly 12 columns of 5 clues.")
+            for category, questions in self._jeopardyRound.items():
+                if len({self.question_values[category][question] for question in questions}) != 5:
+                    raise ValueError("Each fixed-layout column needs five different point values.")
 
 
     def readFromFile(self, encoding, path):
         with open(path, encoding=encoding) as file:
             reader = csv.reader(file, delimiter=",")
-            for row in reader:
+            for line_number, row in enumerate(reader, 1):
+                if not row:
+                    continue
+                if len(row) < 7:
+                    raise ValueError(f"CSV row {line_number} needs seven columns.")
+                if line_number == 1 and row[2].strip().lower() == "round":
+                    continue
                 gameRound = row[2]
                 category = row[3]
                 question = row[5]
                 answer = row[6]
+                if not category.strip() or not question.strip() or not answer.strip():
+                    raise ValueError(f"CSV row {line_number} needs a category, question, and answer.")
                 # Filter out questions with links to other sites
                 if question.find("<a href") == -1:
                     if gameRound == "Final Jeopardy!":
@@ -85,17 +119,22 @@ class JeopardyQuestions():
                             self._jeopardyRound[category].append((question, answer))
                         else:
                             self._jeopardyRound[category] = [(question, answer)]
+                        if self.fixed_layout:
+                            try:
+                                value = int(row[4].replace("$", "").replace(",", "").strip())
+                            except ValueError:
+                                raise ValueError(f"CSV row {line_number} needs a numeric point value.") from None
+                            if value <= 0:
+                                raise ValueError(f"CSV row {line_number} needs a positive point value.")
+                            self.question_values.setdefault(category, {})[(question, answer)] = value
 
     def getCategory(self):
         return random.choice(self._categories)
 
     def getGameCategories(self):
-        categories = []
-        while len(categories) < 12:
-            c = self.getCategory()
-            if not c in categories:
-                categories.append(c)
-        return categories
+        if self.fixed_layout:
+            return list(self._categories)
+        return random.sample(self._categories, 12)
 
     def jeopardyCategories(self):
         return self._jeopardyRound
