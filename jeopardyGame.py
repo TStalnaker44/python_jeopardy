@@ -5,7 +5,7 @@ File: main.py
 The main loop for running Jeopardy Python Edition
 """
 
-import pygame, copy, os, argparse
+import pygame, copy, os, argparse, csv, sqlite3
 from polybius.graphics import *
 from utils.uiManager import USER_INTERFACE
 from polybius.managers import SOUNDS
@@ -14,6 +14,8 @@ from utils.questioncard import QuestionCard
 from utils.jeopardy_gui import JeopardyGameGUI
 from utils.settings import SettingsMenu
 from utils.localplayers import LocalPlayers
+from utils.gamelibrary import GameLibrary
+from utils.progress import ProgressStore
 from pygame._sdl2.video import Window
 
 
@@ -56,7 +58,7 @@ def setWindowDarkMode():
       pass
 
 
-def main(fileName, answerTime, fullscreen, dims):
+def main(fileName, answerTime, fullscreen, dims, show_library=False):
    """
    Main loop for the program
    """
@@ -85,7 +87,9 @@ def main(fileName, answerTime, fullscreen, dims):
    if fileName.endswith(".csv"):
       fileName = fileName[:-4]
       
-   game = JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims))
+   progress = ProgressStore(settings.path.with_name("study-progress.sqlite3"))
+   library = GameLibrary(dims, fileName, settings.path.with_name("library.json"), progress=progress) if show_library else None
+   game = None if library else JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims), progress)
 
    RUNNING = True
 
@@ -96,13 +100,21 @@ def main(fileName, answerTime, fullscreen, dims):
 
       screen.fill((255,255,255))
 
-      game.draw(screen)
+      if library is not None and library.open:
+         library.draw(screen, game is not None)
+      elif game is not None:
+         game.draw(screen)
+         if library is not None:
+            library.draw_navigation(screen)
       settings.draw(screen)
       
       pygame.display.flip()
 
       # event handling, gets all event from the eventqueue
+      force_save = False
       for event in pygame.event.get():
+         if event.type in (pygame.KEYDOWN, pygame.TEXTINPUT, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.QUIT):
+            force_save = True
          if event.type == pygame.QUIT:
             RUNNING = False
             continue
@@ -119,27 +131,75 @@ def main(fileName, answerTime, fullscreen, dims):
             except pygame.error:
                screen = setDisplay(dims, settings.fullscreen)
                settings.message = "Display mode unavailable. Try again."
-            if game.multiplayer.setup_open or game.wager is not None:
+            if game is not None and (game.multiplayer.setup_open or game.wager is not None) and not (library and library.open):
                pygame.key.start_text_input()
             continue
-         if event.type == pygame.KEYDOWN and event.key == pygame.K_m and not game.multiplayer.setup_open:
+         if event.type == pygame.KEYDOWN and event.key == pygame.K_m and not (
+            game is not None and game.multiplayer.setup_open and not (library and library.open)
+         ):
             SOUNDS.toggleMute()
             continue
          if was_open or settings.open or (event.type == pygame.KEYDOWN and event.key == pygame.K_F1):
             continue
+         if library is not None:
+            library_was_open = library.open
+            action = library.handle_event(event, game is not None)
+            if action in ("start", "resume_saved", "restart"):
+               if game is not None and not game.save_checkpoint(True):
+                  library.message = game.checkpoint_error
+                  continue
+               selected_file = str(library.selected_entry["path"].with_suffix(""))
+               try:
+                  entry = library.selected_entry
+                  if action == "start":
+                     new_game = JeopardyGameGUI(selected_file, int(answerTime), dims, LocalPlayers(dims), progress, entry["game_id"], entry["title"])
+                  else:
+                     saved = progress.load_checkpoint(entry["game_id"])
+                     if saved is None:
+                        raise ValueError("No saved game is available. Refresh the library to start a new game.")
+                     new_game = JeopardyGameGUI.from_checkpoint(saved, dims, progress, restart=action == "restart")
+               except (OSError, ValueError, csv.Error, sqlite3.Error, KeyError, TypeError) as error:
+                  library.message = str(error)
+                  pygame.key.stop_text_input()
+               else:
+                  game = new_game
+                  fileName = selected_file
+                  library.remember()
+                  library.open = False
+            elif action == "resume":
+               library.open = False
+               if game.multiplayer.setup_open or game.wager is not None:
+                  pygame.key.start_text_input()
+            elif action == "quit":
+               RUNNING = False
+            if library_was_open or library.open:
+               continue
          if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             RUNNING = False
             continue
-         game.handleEvent(event)
-         if game.new_game_requested:
-            game = JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims))
-
+         if game is not None:
+            game.handleEvent(event)
+            if game.new_game_requested:
+               if library is not None:
+                  game.new_game_requested = False
+                  library.open = True
+                  library.refresh()
+                  pygame.key.stop_text_input()
+               else:
+                  game = JeopardyGameGUI(fileName, int(answerTime), dims, LocalPlayers(dims), progress)
+            
       # Keep the current clue paused while the settings panel is open.
-      if not settings.open:
+      if game is not None and not settings.open and not (library and library.open):
          game.update(ticks)
-
+      if game is not None:
+         if not game.save_checkpoint(force_save or not RUNNING):
+            RUNNING = True
+            if library is not None and library.open:
+               library.message = game.checkpoint_error
+                   
    #Close the pygame window and quit pygame
    settings.save()
+   progress.close()
    pygame.quit()
 
 def initializeManagers():
@@ -147,8 +207,49 @@ def initializeManagers():
    SOUNDS.setMusicFolderPath(os.path.join("resources","music"))
 
 CONTROLS = """
-Escape exits. M toggles mute. F1 opens settings. F11 toggles maximized window.
-Click a clue to reveal it; Space reveals the answer and advances to the board.
+Controls:
+
+- Press the ESCAPE key or press the X to exit the game
+
+- Hit the M key to mute and unmute game audio
+
+- Click Settings or press F1 to adjust volume and fullscreen
+
+- Press F11 to toggle fullscreen
+
+- Choose a question set from the library at startup; use Library or F2 to return
+
+- Add CSV imports a new question set into your library
+
+- Played/completed counts and question results save automatically
+
+- Select a game and choose Review answers to see correct, wrong and skipped history
+
+- Click on Question Tiles to select them
+
+   - The timer will begin automatically
+
+- Click the Space Bar when the question has been answered to advance
+   to the solution screen. 
+
+   - The game will advance automatically when the timer runs out
+
+- Click the Space Bar once more to advance from the Answer Screen
+   back to the Game Board
+
+- The game will automatically advance between rounds
+
+- Add up to six players or teams at startup, or choose Play solo
+
+- After revealing an answer, use C for correct, W for incorrect, or S to skip
+
+- Turns advance after each clue. Click a player on the board to change turns
+
+- Enter a wager before a Daily Double is revealed
+
+- Enter each player's Final Jeopardy wager after the category is shown
+
+- Correct and incorrect answers add or subtract the entered wager
 """
 
 if __name__ == "__main__":
@@ -169,7 +270,7 @@ if __name__ == "__main__":
      help="the width and height of the desired screen in pixels : Entered as (<width>, <height>)") 
    args = parser.parse_args()
    if not args.controls:
-      main(args.qfile, args.timer, args.fullscreen, args.dims )
+      main(args.qfile, args.timer, args.fullscreen, args.dims, show_library=True)
    else:
       print(CONTROLS)
 
