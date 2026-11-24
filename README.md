@@ -78,5 +78,23 @@ When creating a custom CSV file, just type a lowercase 'x' for the Show Number, 
 * Place your new CSV file in the 'questions' folder
 * Finally, include the file name of your CSV when you run the game
 
+## Long question and answer text
+
+Clue cards start at the original 64-point font and reduce it in two-point steps
+when text exceeds the card's horizontal or vertical margins, down to 16 points.
+This applies to questions and revealed answers. Short clues keep their original
+size. The existing clue selection, scoring policy, controls, and startup are
+unchanged. Content that cannot fit even at the minimum font size should be shortened
+or split into shorter lines in the CSV.
+
+Run the independent text-fitting and original-board smoke tests after installing
+Pygame, from the repository root:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+Tests use SDL dummy video/audio drivers and do not open a visible window.
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)

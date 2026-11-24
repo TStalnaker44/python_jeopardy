@@ -29,8 +29,12 @@ class QuestionCard(AbstractGraphic):
         surf.fill(self._backgroundColor)
 
         # Create and draw the internal textbox
-        t = MultiLineTextBox(self._question, (0,0), self._font,
-                    self._fontColor)
+        for font_size in range(64, 15, -2):
+            self._font = pygame.font.SysFont("futura bold", font_size)
+            t = MultiLineTextBox(self._question, (0,0), self._font,
+                        self._fontColor)
+            if t.getWidth() <= self._width - 80 and t.getHeight() <= self._height - 180:
+                break
         t.center(surf)
         t.draw(surf)
 
