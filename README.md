@@ -78,5 +78,37 @@ When creating a custom CSV file, just type a lowercase 'x' for the Show Number, 
 * Place your new CSV file in the 'questions' folder
 * Finally, include the file name of your CSV when you run the game
 
+## Validated and fixed-layout CSV games
+
+Custom games require at least 12 categories with five distinct usable clues each,
+plus a Final Jeopardy clue. Invalid files raise a descriptive `ValueError` instead
+of leaving category or clue selection in an infinite loop. UTF-8 (with or without
+BOM) and Windows-1252 CSVs are supported. The original randomized layout remains
+the default, including its tile values and direct command-line startup.
+
+For a fixed board, place `my_game.layout.json` beside `my_game.csv`:
+
+```json
+{"preserve_layout": true}
+```
+
+A fixed game requires six categories marked `Jeopardy!` and six marked
+`Double Jeopardy!`, with exactly five distinct clues per category. Categories
+keep their first-appearance order **within their CSV round**, even if the two
+rounds are interleaved in the file. A category cannot span both regular rounds.
+Clues retain row order within each category. Each category must have five distinct
+positive numeric `Value` entries (dollar signs and commas are accepted), which
+appear on the board. Final Jeopardy remains selected from the CSV's final clues.
+
+Run the regression checks from the repository root after installing Pygame:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+The tests generate synthetic CSVs and use SDL dummy video/audio drivers for the
+full-board click-through checks. No personal question bank or visible window is
+required.
+
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
